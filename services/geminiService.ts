@@ -1,13 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Assume process.env.API_KEY is available in the environment
-const API_KEY = process.env.API_KEY;
+// FIX: Use import.meta.env.VITE_API_KEY to access environment variables
+// on the client-side with Vite, which resolves the app crash (black screen).
+// The environment variable in your deployment service (Vercel) must be named VITE_API_KEY.
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 
-if (!API_KEY) {
-    throw new Error("API_KEY is not defined in environment variables");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 const model = 'gemini-2.5-flash';
 
 interface Why {
