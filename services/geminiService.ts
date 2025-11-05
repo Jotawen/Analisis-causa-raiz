@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Fix: Per @google/genai guidelines, the API key must be obtained from `process.env.API_KEY`.
-// This change aligns with the library's requirements and resolves the TypeScript error with `import.meta.env`.
+// Fix: Per coding guidelines, initialize GoogleGenAI with process.env.API_KEY directly.
+// This resolves the TypeScript error related to `import.meta.env` and aligns with project standards.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const model = 'gemini-2.5-flash';
