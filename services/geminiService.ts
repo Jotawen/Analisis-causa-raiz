@@ -1,8 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Fix: Per coding guidelines, initialize GoogleGenAI with process.env.API_KEY directly.
-// This resolves the TypeScript error related to `import.meta.env` and aligns with project standards.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Usaremos un patrón de singleton inicializado de forma perezosa.
+// Esto evita que la aplicación se bloquee al inicio si falta la clave de API.
+let ai: GoogleGenAI | null = null;
+
+const getAiClient = (): GoogleGenAI => {
+  const apiKey = process.env.API_KEY;
+
+  // Si falta la clave de API, lanza un error específico y fácil de usar.
+  // Esto será capturado por nuestros componentes y mostrado en la interfaz de usuario.
+  if (!apiKey) {
+    throw new Error(
+      "VITE_API_KEY no está configurada. Por favor, vaya a la configuración de su proyecto en Vercel, añada esta variable de entorno con su clave de API de Google y vuelva a desplegar la aplicación."
+    );
+  }
+  
+  // Inicializa el cliente solo una vez.
+  if (!ai) {
+    ai = new GoogleGenAI({ apiKey });
+  }
+  
+  return ai;
+};
 
 const model = 'gemini-2.5-flash';
 
@@ -37,16 +56,17 @@ export const generateFiveWhysAnalysis = async (problem: string): Promise<string>
 
     3.  **Sugerencias y Plan de Acción:** Propón de 2 a 3 contramedidas o acciones concretas y accionables para abordar la causa raíz identificada. Las sugerencias deben ser prácticas y específicas.
 
-    Asegúrate de que el análisis sea coherente, lógico y útil para resolver el problema original.
+    Asegúrate de que que el análisis sea coherente, lógico y útil para resolver el problema original.
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const generativeModel = getAiClient(); // Obtiene o crea el cliente de IA.
+    const response = await generativeModel.models.generateContent({
         model: model,
         contents: prompt
     });
-    // Gemini's response can sometimes wrap the output in markdown code blocks.
-    // Let's clean it up for better rendering.
+    // La respuesta de Gemini a veces envuelve la salida en bloques de código markdown.
+    // Vamos a limpiarlo para una mejor representación.
     let text = response.text;
     if (text.startsWith("```markdown")) {
         text = text.substring(10, text.length - 3).trim();
@@ -55,8 +75,9 @@ export const generateFiveWhysAnalysis = async (problem: string): Promise<string>
     }
     return text;
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw new Error("Failed to get analysis from Gemini API.");
+    console.error("Error en generateFiveWhysAnalysis:", error);
+    // Vuelve a lanzar el error para que el componente pueda capturarlo y mostrar el mensaje específico.
+    throw error;
   }
 };
 
@@ -96,13 +117,15 @@ export const analyzeIshikawa = async (
     `;
 
     try {
-        const response = await ai.models.generateContent({
+        const generativeModel = getAiClient(); // Obtiene o crea el cliente de IA.
+        const response = await generativeModel.models.generateContent({
             model: model,
             contents: prompt
         });
         return response.text;
     } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        throw new Error("Failed to get analysis from Gemini API.");
+        console.error("Error en analyzeIshikawa:", error);
+        // Vuelve a lanzar el error para que el componente pueda capturarlo y mostrar el mensaje específico.
+        throw error;
     }
 };
