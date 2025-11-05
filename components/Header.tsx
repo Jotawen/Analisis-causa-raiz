@@ -9,7 +9,7 @@ const Header: React.FC = () => {
         <BrainCircuitIcon className="h-10 w-10 text-cyan-400" />
         <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Análisis de Causa Raíz con IA</h1>
-            <p className="text-sm text-gray-400">Método de los 5 Porqués</p>
+            <p className="text-sm text-gray-400">Análisis Automatizado y Lluvia de Ideas Guiada</p>
         </div>
       </div>
     </header>
