@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { analyzeIshikawa, Category, Cause } from '../services/geminiService';
 import GeminiResult from './GeminiResult';
