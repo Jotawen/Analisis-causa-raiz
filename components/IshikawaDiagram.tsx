@@ -16,6 +16,17 @@ const defaultCategories: Category[] = [
   { id: 6, name: 'Medio Ambiente' },
 ];
 
+const predefinedCauses: Record<string, string[]> = {
+    'Método': ['Procedimiento incorrecto', 'Instrucciones poco claras', 'Falta de estandarización', 'Planificación deficiente'],
+    'Mano de Obra': ['Falta de capacitación', 'Error por descuido', 'Falta de experiencia', 'Cansancio o fatiga', 'Falta de habilidad'],
+    'Materiales': ['Materia prima defectuosa', 'Proveedor no confiable', 'Especificaciones incorrectas', 'Almacenamiento inadecuado'],
+    'Maquinaria': ['Falla de equipo', 'Falta de mantenimiento', 'Herramienta inadecuada', 'Configuración incorrecta', 'Equipo obsoleto'],
+    'Medición': ['Instrumento descalibrado', 'Error de medición', 'Criterios de inspección ambiguos', 'Falta de instrumentos'],
+    'Medio Ambiente': ['Iluminación deficiente', 'Contaminación', 'Condiciones climáticas', 'Ruido excesivo', 'Espacio de trabajo desordenado'],
+};
+
+const CUSTOM_CAUSE_VALUE = 'CUSTOM_CAUSE';
+
 interface IshikawaDiagramProps {
   problem: string;
 }
@@ -26,10 +37,11 @@ const IshikawaDiagram: React.FC<IshikawaDiagramProps> = ({ problem }) => {
   const [geminiAnalysis, setGeminiAnalysis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customInputCauseIds, setCustomInputCauseIds] = useState<number[]>([]);
 
   const handleAddCategory = () => {
     categoryIdCounter++;
-    const newCategory: Category = { id: categoryIdCounter, name: `Nueva Categoría ${categoryIdCounter - 6}` };
+    const newCategory: Category = { id: categoryIdCounter, name: `Nueva Categoría` };
     setCategories([...categories, newCategory]);
   };
 
@@ -58,6 +70,7 @@ const IshikawaDiagram: React.FC<IshikawaDiagramProps> = ({ problem }) => {
       ...causes,
       [catId]: causes[catId].filter(c => c.id !== causeId),
     });
+     setCustomInputCauseIds(prev => prev.filter(id => id !== causeId));
   };
   
   const handleCauseTextChange = (catId: number, causeId: number, text: string) => {
@@ -67,12 +80,23 @@ const IshikawaDiagram: React.FC<IshikawaDiagramProps> = ({ problem }) => {
       });
   };
 
+  const handleCauseSelection = (catId: number, causeId: number, value: string) => {
+    if (value === CUSTOM_CAUSE_VALUE) {
+        handleCauseTextChange(catId, causeId, '');
+        setCustomInputCauseIds(prev => [...prev, causeId]);
+    } else {
+        handleCauseTextChange(catId, causeId, value);
+        setCustomInputCauseIds(prev => prev.filter(id => id !== causeId));
+    }
+  }
+
   const handleReset = () => {
     setCategories(defaultCategories);
     setCauses({});
     setGeminiAnalysis('');
     setError(null);
     setIsLoading(false);
+    setCustomInputCauseIds([]);
   };
   
   const isFormComplete = useMemo(() => {
@@ -94,7 +118,6 @@ const IshikawaDiagram: React.FC<IshikawaDiagramProps> = ({ problem }) => {
       setGeminiAnalysis(analysis);
     } catch (err) {
       setError('Ocurrió un error al contactar con la IA. Por favor, inténtalo de nuevo.');
-      // FIX: Add type checking for the caught error to safely handle and log it.
       if (err instanceof Error) {
         console.error(err.message);
       } else {
@@ -112,38 +135,57 @@ const IshikawaDiagram: React.FC<IshikawaDiagramProps> = ({ problem }) => {
         <h2 className="text-lg font-semibold text-cyan-400 mb-4">2. Lluvia de Ideas de Causas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map(category => (
-            <div key={category.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+            <div key={category.id} className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <input 
                     type="text"
                     value={category.name}
                     onChange={(e) => handleCategoryNameChange(category.id, e.target.value)}
-                    className="font-bold text-cyan-500 bg-transparent focus:outline-none focus:bg-gray-800 rounded px-1 -ml-1"
+                    className="font-bold text-cyan-500 bg-transparent focus:outline-none focus:bg-gray-800 rounded px-1 -ml-1 w-full"
                 />
-                <button onClick={() => handleRemoveCategory(category.id)} className="text-gray-500 hover:text-red-400">
+                <button onClick={() => handleRemoveCategory(category.id)} className="text-gray-500 hover:text-red-400 shrink-0 ml-2">
                     <TrashIcon className="w-4 h-4" />
                 </button>
               </div>
-              <div className="space-y-2">
-                {(causes[category.id] || []).map((cause, index) => (
-                    <div key={cause.id} className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            placeholder={`Causa ${index + 1}...`}
-                            value={cause.text}
-                            onChange={(e) => handleCauseTextChange(category.id, cause.id, e.target.value)}
-                            className="w-full bg-gray-700/50 border border-gray-600 rounded-md p-1.5 text-sm text-gray-200 focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition duration-200"
-                        />
-                         <button onClick={() => handleRemoveCause(category.id, cause.id)} className="text-gray-500 hover:text-red-400 shrink-0">
-                            <TrashIcon className="w-4 h-4" />
-                        </button>
-                    </div>
-                ))}
-                <button onClick={() => handleAddCause(category.id)} className="w-full flex items-center justify-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 bg-gray-700/50 hover:bg-gray-700/80 p-1.5 rounded-md transition-colors duration-200">
-                    <PlusIcon className="w-4 h-4" />
-                    Añadir Causa
-                </button>
+              <div className="space-y-2 flex-grow">
+                {(causes[category.id] || []).map((cause) => {
+                    const options = predefinedCauses[category.name] || [];
+                    const isCustom = customInputCauseIds.includes(cause.id);
+                    const showCustomInput = isCustom || (!options.includes(cause.text) && cause.text !== '');
+
+                    return (
+                        <div key={cause.id} className="flex items-center gap-2">
+                            <div className="w-full space-y-1">
+                                <select 
+                                    value={showCustomInput ? CUSTOM_CAUSE_VALUE : cause.text}
+                                    onChange={(e) => handleCauseSelection(category.id, cause.id, e.target.value)}
+                                    className="w-full bg-gray-700/50 border border-gray-600 rounded-md p-1.5 text-sm text-gray-200 focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition duration-200"
+                                >
+                                    <option value="" disabled>Seleccione una causa...</option>
+                                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    <option value={CUSTOM_CAUSE_VALUE}>Otra...</option>
+                                </select>
+                                {showCustomInput && (
+                                    <input
+                                        type="text"
+                                        placeholder={`Causa personalizada...`}
+                                        value={cause.text}
+                                        onChange={(e) => handleCauseTextChange(category.id, cause.id, e.target.value)}
+                                        className="w-full bg-gray-800 border border-gray-600 rounded-md p-1.5 text-sm text-gray-200 focus:ring-1 focus:ring-cyan-500 focus:border-cyan-500 transition duration-200"
+                                    />
+                                )}
+                            </div>
+                            <button onClick={() => handleRemoveCause(category.id, cause.id)} className="text-gray-500 hover:text-red-400 shrink-0 self-start mt-1">
+                                <TrashIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )
+                })}
               </div>
+              <button onClick={() => handleAddCause(category.id)} className="mt-2 w-full flex items-center justify-center gap-2 text-sm text-cyan-400 hover:text-cyan-300 bg-gray-700/50 hover:bg-gray-700/80 p-1.5 rounded-md transition-colors duration-200">
+                  <PlusIcon className="w-4 h-4" />
+                  Añadir Causa
+              </button>
             </div>
           ))}
           <button onClick={handleAddCategory} className="w-full flex items-center justify-center gap-2 text-gray-400 hover:text-white bg-transparent border-2 border-dashed border-gray-600 hover:border-cyan-500 hover:bg-gray-800/50 p-4 rounded-lg transition-colors duration-200">
