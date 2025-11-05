@@ -116,12 +116,9 @@ const IshikawaDiagram: React.FC<IshikawaDiagramProps> = ({ problem }) => {
       const analysis = await analyzeIshikawa(problem, categories, causes);
       setGeminiAnalysis(analysis);
     } catch (err) {
-      setError('Ocurrió un error al contactar con la IA. Por favor, inténtalo de nuevo.');
-      if (err instanceof Error) {
-        console.error(err.message);
-      } else {
-        console.error('An unknown error occurred', err);
-      }
+      const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido. Revisa la consola para más detalles.';
+      setError(errorMessage);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
