@@ -53,7 +53,7 @@ const App: React.FC = () => {
                 }`}
               >
                 <BrainCircuitIcon className="h-5 w-5" />
-                5 Porqués
+                5 Porqués (Automático)
               </button>
               <button
                 onClick={() => setActiveTool('ishikawa')}
@@ -64,7 +64,7 @@ const App: React.FC = () => {
                 }`}
               >
                 <FishboneIcon className="h-5 w-5" />
-                Diagrama de Ishikawa
+                Diagrama de Ishikawa (Guiado)
               </button>
             </nav>
           </div>
