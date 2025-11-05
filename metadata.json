@@ -1,0 +1,5 @@
+{
+  "name": "Análisis de Causa Raíz con IA",
+  "description": "Una aplicación interactiva para realizar un análisis de causa raíz utilizando el método de los '5 Porqués', potenciada por la IA de Gemini para proporcionar resúmenes y sugerencias.",
+  "requestFramePermissions": []
+}
