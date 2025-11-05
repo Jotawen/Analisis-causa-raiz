@@ -1,16 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 
-// FIX: Use import.meta.env.VITE_API_KEY to access environment variables
-// on the client-side with Vite, which resolves the app crash (black screen).
-// The environment variable in your deployment service (Vercel) must be named VITE_API_KEY.
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
+// FIX: The API key must be obtained from process.env.API_KEY as per the guidelines. This resolves the TypeScript error on `import.meta.env`.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const model = 'gemini-2.5-flash';
-
-interface Why {
-  id: number;
-  answer: string;
-}
 
 export interface Category {
     id: number;
@@ -22,29 +15,28 @@ export interface Cause {
     text: string;
 }
 
-export const analyzeRootCause = async (problem: string, whys: Why[]): Promise<string> => {
-  const formattedWhys = whys
-    .map((why, index) => `Por qué ${index + 1}: ${why.answer}`)
-    .join('\n');
-
+export const generateFiveWhysAnalysis = async (problem: string): Promise<string> => {
   const prompt = `
-    Actúa como un experto consultor en resolución de problemas y análisis de causa raíz utilizando la metodología de los "5 Porqués".
-    A continuación, te presento un análisis realizado por un usuario.
+    Actúa como un experto consultor en resolución de problemas y análisis de causa raíz. Tu tarea es guiar a un usuario a través de la metodología de los "5 Porqués" de manera automática.
 
-    **Problema Inicial:**
+    **Problema Inicial Proporcionado por el Usuario:**
     ${problem}
 
-    **Cadena de los 5 Porqués y sus Respuestas:**
-    ${formattedWhys}
-
     **Tu Tarea:**
-    Basándote estrictamente en la información proporcionada, realiza las siguientes tres acciones en español y formatea tu respuesta claramente:
+    Basado en el problema inicial, realiza un análisis completo y estructurado en español. Tu respuesta DEBE seguir este formato Markdown exacto:
 
-    1. **Resumen del Análisis:** Describe brevemente la secuencia de eventos o la cadena causal que llevó desde la causa más superficial hasta la causa raíz identificada en la respuesta al quinto porqué.
-    
-    2. **Validación de la Causa Raíz:** Evalúa si la respuesta al quinto porqué parece ser una causa raíz fundamental (generalmente relacionada con un proceso, sistema o decisión humana) en lugar de un simple síntoma. Ofrece una breve justificación.
+    1.  **Análisis de los 5 Porqués:** Genera una cadena lógica y plausible de 5 preguntas de "Por qué" y sus respuestas correspondientes. Cada porqué debe profundizar en la causa del anterior.
+        *   **1. ¿Por qué...?** (Genera la primera pregunta basada en el problema)
+            *   *Respuesta:* (Genera una respuesta plausible)
+        *   **2. ¿Por qué...?** (Genera la segunda pregunta basada en la respuesta anterior)
+            *   *Respuesta:* (Genera una respuesta plausible)
+        *   ... y así sucesivamente hasta el quinto porqué.
 
-    3. **Sugerencias y Pasos Siguientes:** Propón 2 o 3 contramedidas o acciones concretas que podrían tomarse para abordar la causa raíz identificada y prevenir la recurrencia del problema.
+    2.  **Identificación de la Causa Raíz:** Después de los 5 porqués, declara explícitamente la causa raíz fundamental que has descubierto. Esta debe ser la respuesta al quinto porqué.
+
+    3.  **Sugerencias y Plan de Acción:** Propón de 2 a 3 contramedidas o acciones concretas y accionables para abordar la causa raíz identificada. Las sugerencias deben ser prácticas y específicas.
+
+    Asegúrate de que el análisis sea coherente, lógico y útil para resolver el problema original.
   `;
 
   try {
@@ -52,12 +44,21 @@ export const analyzeRootCause = async (problem: string, whys: Why[]): Promise<st
         model: model,
         contents: prompt
     });
-    return response.text;
+    // Gemini's response can sometimes wrap the output in markdown code blocks.
+    // Let's clean it up for better rendering.
+    let text = response.text;
+    if (text.startsWith("```markdown")) {
+        text = text.substring(10, text.length - 3).trim();
+    } else if (text.startsWith("```")) {
+        text = text.substring(3, text.length - 3).trim();
+    }
+    return text;
   } catch (error) {
     console.error("Error calling Gemini API:", error);
     throw new Error("Failed to get analysis from Gemini API.");
   }
 };
+
 
 export const analyzeIshikawa = async (
     problem: string,
