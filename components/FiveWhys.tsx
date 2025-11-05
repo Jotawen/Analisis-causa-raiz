@@ -38,7 +38,8 @@ const FiveWhys: React.FC<FiveWhysProps> = ({ problem }) => {
       const analysis = await generateFiveWhysAnalysis(problem);
       setGeminiAnalysis(analysis);
     } catch (err) {
-      setError('Ocurrió un error al contactar con la IA. Por favor, inténtalo de nuevo.');
+      const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido. Revisa la consola para más detalles.';
+      setError(errorMessage);
       console.error(err);
     } finally {
       setIsLoading(false);
