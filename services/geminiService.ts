@@ -5,7 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 let ai: GoogleGenAI | null = null;
 
 const getAiClient = (): GoogleGenAI => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY;
 
   // Si falta la clave de API, lanza un error específico y fácil de usar.
   // Esto será capturado por nuestros componentes y mostrado en la interfaz de usuario.
